@@ -1,34 +1,22 @@
 from transformers import pipeline
 import textstat
 
-# 1. Use 'text-generation' because it is in your 'available tasks' list
-print("Loading AI Model (BART)... This may take a minute.")
-summarizer = pipeline("text-generation", model="facebook/bart-large-cnn")
+# Using a distilled model to fit within Render's 512MB RAM limit
+summarizer = pipeline("summarization", model="sshleifer/distilbart-cnn-6-6")
 
 def get_ai_summary(text):
-    original_word_count = len(text.split())
+    if not text.strip():
+        return "Please enter some text to summarize."
+    
+    # Calculate readability before summary
     readability_score = textstat.flesch_reading_ease(text)
     
-    # CHUNKING: Split text into blocks of 500 words
-    words = text.split()
-    chunks = [" ".join(words[i : i + 500]) for i in range(0, len(words), 500)]
-    
-    summaries = []
-    for chunk in chunks:
-        # Note: Using max_new_tokens for the 'text-generation' task
-        result = summarizer(chunk, max_new_tokens=150, do_sample=False)
-        summaries.append(result[0]['generated_text'])
-    
-    final_summary = " ".join(summaries)
+    # Generate summary
+    # max_length and min_length help control memory usage
+    summary = summarizer(text, max_length=130, min_length=30, do_sample=False)
+    summary_text = summary[0]['summary_text']
     
     return {
-        "summary": final_summary,
-        "original_count": original_word_count,
-        "new_count": len(final_summary.split()),
-        "readability": readability_score
+        "summary": summary_text,
+        "readability": f"{readability_score:.2f}"
     }
-
-if __name__ == "__main__":
-    sample_text = "AI is transforming the world. Summarization helps condense information."
-    output = get_ai_summary(sample_text)
-    print(f"\nSummary: {output['summary']}")
