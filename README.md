@@ -1,7 +1,4 @@
-# AI-Summarizer
-# 📝 AI Text Summarizer (Local Version)
-
-📝 Task 14: AI Writer with Text Summarization
+📝 AI Writer with Text Summarization
 📖 Overview
 This project is a fully functional web application developed as part of my Data Science Internship (March 2026). The objective was to build an end-to-end NLP tool that can take large articles and generate concise, human-like summaries.
 
@@ -88,4 +85,4 @@ Solution: Implemented a Global Loading Check. Added a status message: "AI Engine
 ✅ Final Output
 The final application successfully takes complex articles (like tech news or history paragraphs) and reduces them to their core message. It effectively bridges the gap between deep learning models and a user-friendly interface.
 
-Author: [SWETHA]
+Author: [Swetha]
