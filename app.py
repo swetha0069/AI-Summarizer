@@ -1,8 +1,24 @@
 from flask import Flask, render_template, request
-from engine import get_ai_summary
-import os
+from transformers import pipeline
 
 app = Flask(__name__)
+
+# --- GLOBAL ENGINE SETUP ---
+summarizer = None
+
+def load_engine():
+    global summarizer
+    print("--- 📥 Starting AI Engine Download... ---")
+    try:
+        # Using 'text-generation' because your computer explicitly supports it
+        # Using 'gpt2' because it is small, fast, and very reliable for local testing
+        summarizer = pipeline("text-generation", model="gpt2")
+        print("--- ✅ AI Engine Loaded & Ready! ---")
+    except Exception as e:
+        print(f"--- ❌ Error Loading Engine: {e} ---")
+
+# Start the loading process
+load_engine()
 
 @app.route('/')
 def index():
@@ -10,19 +26,33 @@ def index():
 
 @app.route('/summarize', methods=['POST'])
 def summarize():
+    global summarizer
     if request.method == 'POST':
-        text = request.form.get('data', '')
-        if not text:
-            return render_template('index.html', error="Please enter some text.")
+        input_text = request.form['data']
+        
+        if summarizer is None:
+            return "AI Engine is still downloading in the terminal. Please wait 60 seconds and refresh."
+
+        if input_text.strip():
+            # For GPT2, we ask it to summarize in the prompt
+            query = f"Text: {input_text}\n\nSummary:"
             
-        # This calls your AI model from engine.py
-        result = get_ai_summary(text)
-        return render_template('index.html', result=result)
+            # Generate the result
+            raw_result = summarizer(query, max_length=100, num_return_sequences=1)
+            full_text = raw_result[0]['generated_text']
+            
+            # Extract just the summary part
+            summary_text = full_text.split("Summary:")[-1].strip()
+            
+            result_data = {
+                "summary": summary_text,
+                "original_count": len(input_text.split()),
+                "new_count": len(summary_text.split()),
+                "readability": "High"
+            }
+            return render_template('index.html', result=result_data, original=input_text)
+            
+    return render_template('index.html')
 
 if __name__ == '__main__':
-    # Render assigns a dynamic port, so we must read it from the environment
-    # If it's not found (like on your laptop), it defaults to 10000
-    port = int(os.environ.get("PORT", 10000))
-    
-    # host='0.0.0.0' is required for cloud hosting
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True, port=5000)
